@@ -1,0 +1,93 @@
+name: Register and deploy build artifact with evidence                                                                                                                                                                                                            
+on:                                                                                                                                                                                                                                               
+    push                                                                                                                                                                                                                                            
+jobs:                                                                                                                                                                                                                                             
+    register-artifact:   
+      name: Register build artifact
+      runs-on: ubuntu-latest
+      permissions:                                                                                                                                                                                                                                  
+        id-token: write                                                                                                                                                                                                                             
+        contents: read                                                                                                                                                                                                                              
+      steps:                                                                                                                                                                                                                                        
+        - name: Checkout code                                                                                                                                                                                                                       
+          uses: actions/checkout@v6                                                                                                                                                                                                                 
+        - name: Build                                                                                                                                                                                                                               
+          run: |                                                                                                                                                                                                                                    
+            sleep 10    
+        - name: Fix GITHUB_OUTPUT permissions
+          run: chmod a+w "$GITHUB_OUTPUT"
+        - name: Register build artifact                                                                                                                                                                                                             
+          id: register-build-artifact                                                                                                                                                                                                               
+          uses: cloudbees-io-gha/register-build-artifact@v3                                                                                                                                                                                         
+          with:                                                                                                                                                                                                                                     
+            cloudbees-url: "https://api.saas-preprod.beescloud.com"                                                                                                                                                                                 
+            name: h-artifact-gha-bb                                                                                                                                                                                                                 
+            url: "https://example.com/h-artifact-gha/1.0.0"                                                                                                                                                                                         
+            version: 1.0.0      
+            commit: 1234abcd-ab34-123cd-56ef-12345678abcd
+            digest: sha256:abcdef1234567890
+            label: staging,prod
+            ref: master
+            type: Docker
+        - name: Print artifact id                                                                                                                                                                                                                   
+          run: |                                                                                                                                                                                                                                    
+            echo '${{ steps.register-build-artifact.outputs.cbp_artifact_id }}'                                                                                                                                                                     
+        - name: Register deployed artifact
+          uses: cloudbees-io-gha/register-deployed-artifact@v1
+          id: register-deployed-artifact
+          with:
+            cloudbees-url: "https://api.saas-preprod.beescloud.com"
+            target-environment: "Production"
+            artifact-id: ${{ steps.register-build-artifact.outputs.cbp_artifact_id }}
+            labels: "test"  
+        - name: Publish evidence
+          uses: cloudbees-io-gha/publish-evidence-item@v2
+          with:
+            content: |
+              # Sample Markdown evidence output
+              - Artifact : [h-artifact-gha-bb](https://example.com/h-artifact-gha/1.0.0)
+              - Deployed environment : "Production"
+    register-artifact-1:                                                                                                                                                                                                                              
+      runs-on: ubuntu-latest
+      permissions:                                                                                                                                                                                                                                  
+        id-token: write                                                                                                                                                                                                                             
+        contents: read                                                                                                                                                                                                                              
+      steps:                                                                                                                                                                                                                                        
+        - name: Checkout code                                                                                                                                                                                                                       
+          uses: actions/checkout@v6                                                                                                                                                                                                                 
+        - name: Build                                                                                                                                                                                                                               
+          run: |                                                                                                                                                                                                                                    
+            sleep 10      
+        - name: Fix GITHUB_OUTPUT permissions
+          run: chmod a+w "$GITHUB_OUTPUT"                                                                                                                                                                                                                             
+        - name: Register build artifact                                                                                                                                                                                                             
+          id: register-build-artifact                                                                                                                                                                                                               
+          uses: cloudbees-io-gha/register-build-artifact@v3                                                                                                                                                                                         
+          with:                                                                                                                                                                                                                                     
+            cloudbees-url: "https://api.saas-preprod.beescloud.com"                                                                                                                                                                                 
+            name: h-artifact-gha-bb-1                                                                                                                                                                                                                 
+            url: "https://example.com/h-artifact-gha-bb-1/1.0.0"                                                                                                                                                                                         
+            version: 1.0.0            
+            commit: 1234abcd-ab34-123cd-56ef-12345678dcba
+            digest: sha256:1234abcdef1234567890
+            label: staging,prod
+            ref: master
+            type: Docker
+        - name: Print artifact id                                                                                                                                                                                                                   
+          run: |                                                                                                                                                                                                                                    
+            echo '${{ steps.register-build-artifact.outputs.cbp_artifact_id }}'                                                                                                                                                                     
+        - name: Register deployed artifact
+          uses: cloudbees-io-gha/register-deployed-artifact@v1
+          id: register-deployed-artifact
+          with:
+            cloudbees-url: "https://api.saas-preprod.beescloud.com"
+            target-environment: "Production"
+            arifact-id: ${{ steps.register-build-artifact.outputs.cbp_artifact_id }}
+            labels: "test"    
+        - name: Publish evidence
+          uses: cloudbees-io-gha/publish-evidence-item@v2
+          with:
+            content: |
+              # Sample Markdown evidence output
+              - Artifact : [h-artifact-gha-bb-1](https://example.com/h-artifact-gha-bb-1/1.0.0)
+              - Deployed environment : "Production"
