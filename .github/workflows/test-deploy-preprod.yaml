@@ -31,4 +31,4 @@ jobs:
             cloudbees-url: "https://api.saas-preprod.beescloud.com"
             target-environment: "Production"
             artifact-id: ${{ steps.register-build-artifact.outputs.cbp_artifact_id }}
-            labels: "test"  
+            labels: "qa" 
